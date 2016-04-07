@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * Start listening to SendGrid
+ */
+$httpPost = file_get_contents("php://input");
+(new SendGridWebhook())->run($httpPost);
+
+/**
+ * Class SendGridWebhook
+ *
+ * A webhook to listen SendGrid http posts in json regarding 'sent' emails. Using this we know what is the status of sent emails
+ * and then we can updates the record in our database. The documentation for Event Webhook can be found here:
+ * https://sendgrid.com/docs/API_Reference/Webhooks/event.html
+ *
+ * To use this webhook you need to set its url on your server in SendGrid admin panel -> Mail settings -> Event Notification
+ *
+ * To debug, change DEBUG to true, which writes the http post from SendGrid into a file
+ */
+class SendGridWebhook
+{
+    private $httpPost;
+
+    // events white list
+    const EVENT_TYPES_WHITE_LIST = [
+        // Delivery Events
+        'deliveryEvents' => ['bounce', 'deferred', 'delivered', 'dropped', 'processed'],
+        // Engagement Events
+        'engagementEvents' => ['click', 'open', 'spamreport', 'unsubscribe']
+    ];
+
+    const DEBUG = false;
+
+    /**
+     * Main function
+     *
+     * @param $httpPost
+     */
+    public function run($httpPost)
+    {
+        if (self::DEBUG === true) {
+            // The log file will have <this class name>.log
+            $fh = fopen(get_class($this) . '.log', 'a+');
+            if ($fh) {
+                fwrite($fh, print_r($httpPost, true));
+                fclose($fh);
+            }
+        }
+
+        // This is http post coming from SendGrid which is json
+        $this->setHttpPost($httpPost);
+
+        // TODO: Call any function to process the data based on your requirements
+    }
+
+    /**
+     * @param string $type
+     * @return mixed
+     */
+    public function getHttpPost($type = 'array')
+    {
+        if ($type === 'array') {
+            return json_decode($this->httpPost);
+        } else {
+            return $this->httpPost;
+        }
+    }
+
+    /**
+     * Get event type from the white list
+     * This is also used to validate the server name
+     *
+     * @param $event
+     * @return bool|string
+     */
+    public function getEventType($event)
+    {
+        $allEvents = self::EVENT_TYPES_WHITE_LIST;
+
+        foreach ($allEvents as $eventType => $events) {
+            if (in_array($event, $events)) {
+                return $eventType;
+            }
+        }
+
+        // did not find any, return false
+        return false;
+    }
+
+    /**
+     * @param $httpPost
+     */
+    public function setHttpPost($httpPost)
+    {
+        $this->httpPost = $httpPost;
+    }
+}
