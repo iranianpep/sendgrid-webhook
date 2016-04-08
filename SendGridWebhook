@@ -9,7 +9,7 @@ $httpPost = file_get_contents("php://input");
 /**
  * Class SendGridWebhook
  *
- * A webhook to listen SendGrid http posts in json regarding 'sent' emails. Using this we know what is the status of sent emails
+ * A class to listen SendGrid http posts (webhook) in json regarding 'sent' emails. Using this we know what is the status of sent emails
  * and then we can updates the record in our database. The documentation for Event Webhook can be found here:
  * https://sendgrid.com/docs/API_Reference/Webhooks/event.html
  *
